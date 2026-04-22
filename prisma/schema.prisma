@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String?
+  role          String   @default("user")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  sku           String   @unique
+  costNeto      Float
+  costIva       Float
+  valueUnit     Float
+  quantity      Int
+  stockMinimo   Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  alerts        Alert[]
+  
+  @@index([sku])
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  rut       String   @unique
+  sales     Sale[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([rut])
+}
+
+model Supplier {
+  id        String     @id @default(cuid())
+  name      String
+  rut       String     @unique
+  purchases Purchase[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  @@index([rut])
+}
+
+model Sale {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  total     Float
+  items     Json     // List of items sold: [{productId, quantity, unitPrice}]
+  clientId  String
+  client    Client   @relation(fields: [clientId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([clientId])
+  @@index([date])
+}
+
+model Purchase {
+  id         String   @id @default(cuid())
+  date       DateTime @default(now())
+  total      Float
+  items      Json     // List of items purchased: [{productId, quantity, unitPrice}]
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([supplierId])
+  @@index([date])
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  message     String
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([productId])
+  @@index([resolved])
+}
